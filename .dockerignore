@@ -1,0 +1,14 @@
+minio_data/
+mysql_data/
+mlruns/
+.venv/
+frontend/node_modules/
+api/
+*.pt
+*.md
+.git/
+.github/
+k8s/
+monitoring/
+retrain/
+tests/
