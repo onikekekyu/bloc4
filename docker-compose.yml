@@ -140,7 +140,10 @@ services:
     container_name: fish_api
     restart: always
     depends_on:
-      - minio
+      minio:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
     ports:
       - "8000:8000"
     volumes:
