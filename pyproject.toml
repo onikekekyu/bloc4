@@ -1,9 +1,0 @@
-[project]
-name = "fishy_project"
-version = "0.1.0"
-description = "Projet Python pour extraction et gestion SQL"
-requires-python = ">=3.8"
-dependencies = [
-    "minio>=7.2.7",
-    "pymysql>=1.1.2",
-]
