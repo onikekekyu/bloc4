@@ -111,7 +111,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "increase(fish_predictions_total[1h])",
+          "expr": "increase(fish_predictions_total[15m])",
           "legendFormat": "{{predicted_class}}",
           "refId": "A"
         }
