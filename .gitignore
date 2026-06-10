@@ -50,6 +50,9 @@ airflow/plugins/__pycache__/
 !model_v1_*.pt  # Autoriser les modèles versionnés avec Git LFS
 *.pkl
 *.joblib
+*.json
+!monitoring/grafana/provisioning/dashboards/*.json
+!frontend/package.json
 
 # ============================
 # Fichiers MLFlow / modèles
@@ -66,9 +69,7 @@ data/
 dataset/
 datasets/
 outputs/
-*.jpg
-*.png
-*.jpeg
+# images locales (sauf les assets du frontend trackés via git)
 *.gif
 
 # ============================

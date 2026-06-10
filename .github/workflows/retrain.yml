@@ -1,0 +1,58 @@
+name: Retrain Model
+
+on:
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: "Raison du réentraînement (ex: nouveau dataset, drift détecté)"
+        required: false
+        default: "Manuel"
+  schedule:
+    - cron: "0 2 * * 1"  # Chaque lundi à 2h du matin
+
+jobs:
+  retrain:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Build training Docker image
+      run: |
+        docker build -t fish-training:latest -f Dockerfile .
+
+    - name: Log retrain trigger
+      run: |
+        echo "Retrain triggered at $(date)"
+        echo "Reason: ${{ github.event.inputs.reason || 'Scheduled (weekly)' }}"
+        echo "Triggered by: ${{ github.actor }}"
+
+    - name: Run retrain pipeline
+      run: |
+        python retrain/retrain.py \
+          --minio-endpoint "${{ secrets.MINIO_ENDPOINT || 'minio:9000' }}" \
+          --minio-key "${{ secrets.MINIO_ACCESS_KEY || 'admin-user' }}" \
+          --minio-secret "${{ secrets.MINIO_SECRET_KEY || 'admin-password' }}" \
+          --mysql-host "${{ secrets.MYSQL_HOST || 'localhost' }}" \
+          --mysql-password "${{ secrets.MYSQL_PASSWORD || 'root' }}"
+
+    - name: Push updated training image to GHCR
+      run: |
+        echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+        docker tag fish-training:latest ghcr.io/${{ github.repository_owner }}/fish-training:latest
+        docker push ghcr.io/${{ github.repository_owner }}/fish-training:latest

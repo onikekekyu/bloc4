@@ -6,3 +6,6 @@ pillow
 minio
 python-multipart
 prometheus-client
+pymysql
+evidently>=0.4.0
+pandas

@@ -111,10 +111,7 @@ os.environ["AWS_SECRET_ACCESS_KEY"] = MINIO_SECRET_KEY
 os.environ["MLFLOW_S3_ENDPOINT_URL"] = f"http://minio:9000" if IN_DOCKER else "http://localhost:9000"
 print("✅ Credentials configurés pour MLflow")
 
-print("🔌 Configuration de MLflow...")
-mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
-mlflow.set_experiment(MLFLOW_EXPERIMENT_NAME)
-print(f"✅ MLflow configuré : {MLFLOW_TRACKING_URI}")
+print("✅ MLflow sera configuré au démarrage de l'entraînement")
 
 # ============================================================
 # 3️⃣ Lecture des images depuis la table SQL

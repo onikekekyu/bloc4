@@ -107,8 +107,8 @@ services:
         condition: service_healthy
     networks:
       - mlops-net
-    command: python extraction_creation_sql.py
-  
+    command: python src/extraction_creation_sql.py
+
   # ====================================
   #  Training du modèle
   # ====================================
@@ -128,14 +128,14 @@ services:
         condition: service_completed_successfully
     networks:
       - mlops-net
-    command: python train_model.py
+    command: python src/train_model.py
   
   # ====================================
   #  API de prédiction FastAPI
   # ====================================
   fish_api:
     build:
-      context: ./app
+      context: ./api
       dockerfile: Dockerfile
     container_name: fish_api
     restart: always
