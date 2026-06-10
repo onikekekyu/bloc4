@@ -1,348 +1,176 @@
-# 🐟 Fish Classification - MLOps Project
+# Fish Classification — MLOps Project
 
-Projet de classification d'images de poissons utilisant **PyTorch ResNet18** avec un pipeline MLOps complet (MinIO + MySQL + Docker) et une interface web interactive.
+Classification d'images de poissons en 5 espèces avec un pipeline MLOps complet.
 
-## 📊 Résultats
+- **Modèle :** ResNet18 (transfer learning) — 84% validation accuracy
+- **Dataset :** 1306 images (Catfish, Goldfish, Mudfish, Mullet, Snakehead)
+- **Stack :** FastAPI · React/Vite · MinIO · MySQL · MLflow · Prometheus · Grafana · Docker
 
-- **Classes :** 5 espèces (Catfish, Gold Fish, Mudfish, Mullet, Snakehead)
-- **Dataset :** 1306 images (1045 train + 261 test)
-- **Modèle :** ResNet18 (transfer learning)
-- **Validation Accuracy :** 84.21% (meilleur modèle)
-- **Test Accuracy :** ~70-100% selon échantillons
-- **API REST :** FastAPI pour prédictions en temps réel
-- **Frontend :** React + Vite avec animations aquatiques
+---
 
-## 🚀 Démarrage rapide
-
-### Option A : Tout démarrer en une commande (Recommandé 🎯)
+## Démarrage rapide
 
 ```bash
-# Démarrer TOUTE l'application (infra + API + frontend)
-docker-compose up -d minio mysql phpmyadmin mlflow fish_api frontend
-
-# Accéder à l'application web
-open http://localhost:3000
+docker compose up -d
 ```
 
-✨ **Le lendemain, rallumer tout :**
-```bash
-docker-compose up -d
-```
-
-### Option B : Démarrage étape par étape
-
-#### 1. Infrastructure de base
-
-```bash
-# Infrastructure + interfaces web
-docker-compose up -d minio mysql phpmyadmin mlflow
-```
-
-#### 2. Pipeline d'entraînement du modèle
-
-```bash
-# Lancer le pipeline d'entraînement
-docker-compose up --build extraction training
-```
-
-Cette commande va automatiquement :
-- ✅ Démarrer MinIO et MySQL
-- ✅ Attendre que les services soient **healthy** (prêts)
-- ✅ Lancer `extraction` : créer la table SQL et extraire les métadonnées depuis MinIO
-- ✅ Attendre que extraction soit **terminé avec succès**
-- ✅ Lancer `training` : télécharger les images et entraîner le modèle (20 epochs)
-
-#### 3. API et Frontend
-
-```bash
-# Démarrer l'API et le Frontend
-docker-compose up -d fish_api frontend
-```
-
-### 4. Tester le modèle (script Python)
-
-```bash
-docker-compose up --build predict
-```
-
-⚠️ **Important :** Toujours utiliser `--build` après avoir modifié le code Python pour forcer la reconstruction de l'image Docker.
-
-### 5. Interfaces web
+L'API attend que MinIO et MySQL soient healthy avant de démarrer. Tout est prêt en ~30 secondes.
 
 | Service | URL | Identifiants |
-|---------|-----|--------------|
-| **Frontend React** | http://localhost:3000 | - |
-| **API FastAPI** | http://localhost:8000 | - |
-| **Prometheus** | http://localhost:9090 | - |
-| **Grafana** | http://localhost:3002 | `admin` / `admin` |
-| MinIO Console | http://localhost:9001 | `admin-user` / `admin-password` |
+|---|---|---|
+| Frontend React | http://localhost:3000 | — |
+| API FastAPI | http://localhost:8000 | — |
+| Grafana | http://localhost:3002 | `admin` / `admin` |
+| Prometheus | http://localhost:9090 | — |
+| MinIO console | http://localhost:9001 | `admin-user` / `admin-password` |
 | phpMyAdmin | http://localhost:8080 | `root` / `root` |
-| MLflow | http://localhost:5001 | - |
-| cAdvisor | http://localhost:8081 | - |
+| MLflow | http://localhost:5001 | — |
+| cAdvisor | http://localhost:8081 | — |
 
-## 🏗️ Architecture
+---
 
-```
-┌──────────┐     ┌──────────────┐     ┌──────────────┐     ┌──────────────┐     ┌──────────┐
-│  MinIO   │────▶│  Extraction  │────▶│    MySQL     │────▶│   Training   │────▶│  MinIO   │
-│ (images) │     │     SQL      │     │ (fish_data)  │     │   (model)    │     │ (model)  │
-└──────────┘     └──────────────┘     └──────────────┘     └──────────────┘     └──────────┘
-                                               │                                       │
-                                               └──────────────────┐                    │
-                                                                  ▼                    ▼
-                                                            ┌──────────────┐     ┌──────────┐
-                                                            │   Predict    │────▶│  Results │
-                                                            │   (test)     │     │          │
-                                                            └──────────────┘     └──────────┘
-                                                                                       │
-                                                                                       ▼
-                                                            ┌──────────────────────────────┐
-                                                            │   FastAPI REST API           │
-                                                            │   POST /predict              │
-                                                            └──────────────────────────────┘
-                                                                       │
-                                                                       ▼
-                                                            ┌──────────────────────────────┐
-                                                            │   React Frontend (Vite)      │
-                                                            │   - Upload d'images          │
-                                                            │   - Animations aquatiques    │
-                                                            │   - Affichage résultats      │
-                                                            └──────────────────────────────┘
-```
-
-## 📁 Structure du projet
+## Structure
 
 ```
 .
-├── docker-compose.yml           # Orchestration des services
-├── Dockerfile                   # Image Python pour les scripts
-├── requirements.txt             # Dépendances Python (torch, minio, pymysql, etc.)
-├── extraction_creation_sql.py   # Création table + extraction depuis MinIO
-├── train_model.py               # Entraînement du modèle ResNet18 (20 epochs)
-├── predict.py                   # Prédiction sur images de test
-├── app/
-│   └── main.py                  # API FastAPI avec endpoint /predict
-├── frontend/                    # Application React + Vite
-│   ├── src/
-│   │   ├── App.jsx              # Composant principal avec upload
-│   │   ├── components/          # Composants UI (Bubbles, SwimmingFish, etc.)
-│   │   └── assets/
-│   │       └── fish-images/     # Images PNG pour le frontend
-│   ├── package.json             # Dépendances npm
-│   └── vite.config.js           # Configuration Vite avec proxy
-├── FishImgDataset/              # Dataset local (backup)
-│   ├── train/                   # 1045 images d'entraînement
-│   │   ├── Catfish/
-│   │   ├── Gold Fish/
-│   │   ├── Mudfish/
-│   │   ├── Mullet/
-│   │   └── Snakehead/
-│   └── test/                    # 261 images de test
-│       ├── Catfish/
-│       ├── Gold Fish/
-│       ├── Mudfish/
-│       ├── Mullet/
-│       └── Snakehead/
-└── model_v1_1761836094.pt       # Modèle entraîné (versionné avec Git LFS)
+├── api/                        # API FastAPI (serving)
+│   ├── main.py                 # Endpoints : /predict, /drift, /drift/report, /metrics
+│   ├── model.py                # Chargement ResNet18 depuis MinIO
+│   ├── db.py                   # Connexion MySQL, log des prédictions
+│   ├── drift.py                # Rapport Evidently (détection de drift)
+│   └── requirements.txt
+├── src/                        # Scripts ML
+│   ├── extraction_creation_sql.py  # Extraction métadonnées MinIO → MySQL
+│   ├── train_model.py              # Entraînement ResNet18 + MLflow tracking
+│   ├── predict.py                  # Test sur le jeu de test
+│   └── upload_model_to_minio.py
+├── retrain/
+│   └── retrain.py              # Réentraînement automatisé (drift-triggered)
+├── tests/
+│   └── test_predict.py         # Tests d'intégration API
+├── frontend/                   # React + Vite
+├── monitoring/
+│   ├── prometheus.yml
+│   └── grafana/provisioning/   # Dashboard + datasource auto-provisionnés
+├── k8s/                        # Manifests Kubernetes (désactivés)
+├── .github/workflows/
+│   ├── ci-cd.yml               # Build, test, push images Docker → GHCR
+│   └── retrain.yml             # Réentraînement manuel ou hebdomadaire (cron)
+├── Dockerfile                  # Image Python pour les scripts ML
+└── docker-compose.yml          # Orchestration complète
 ```
 
-## 🔄 Fonctionnement du pipeline
+---
 
-### 1. Service `extraction`
-- Se connecte à MinIO (bucket `dataset-fish`)
-- Crée la table `fish_data` avec le schéma suivant :
-  - `id`, `species_label`, `file_name`, `url_s3`, `split` (train/test), `insert_date`
-- Supprime les données existantes (prévention doublons)
-- Parcourt les images dans `train/` et `test/`
-- Insère les métadonnées dans MySQL avec le champ `split`
+## Pipeline ML
 
-### 2. Service `training`  
-- **Attend** que `extraction` soit terminé avec succès
-- Récupère uniquement les images `WHERE split = 'train'` depuis MySQL
-- Télécharge les images depuis MinIO
-- Applique un split 80/20 train/validation
-- Entraîne un modèle **ResNet18** (transfer learning) pendant **20 epochs**
-- Calcule à chaque epoch : train loss, validation loss, validation accuracy
-- Sauvegarde le meilleur modèle (meilleure val accuracy)
-- Upload le modèle dans MinIO (bucket `models`) avec timestamp : `model_v1_{timestamp}.pt`
-
-### 3. Service `predict`
-- Télécharge le modèle entraîné depuis MinIO
-- Récupère 10 images aléatoires `WHERE split = 'test'` depuis MySQL
-- Fait des prédictions et affiche les résultats avec confiance
-- **Pas de data leakage** : teste uniquement sur le test set
-
-### 4. Service `fish_api` (FastAPI)
-- API REST pour prédictions en temps réel
-- Endpoint `POST /predict` : accepte une image (multipart/form-data)
-- Télécharge le modèle depuis MinIO au démarrage
-- Retourne la prédiction et le score de confiance en JSON
-- CORS activé pour le frontend (port 3000)
-
-### 5. Frontend React + Vite
-- Interface web interactive avec thème aquatique
-- Upload d'images par glisser-déposer ou sélection
-- Animations de bulles et poissons
-- Affichage des résultats avec images et confiance
-- Easter egg Kraken (20 clics sur le titre)
-- Proxy Vite vers l'API (port 8000)
-
-### 6. Monitoring Stack (Prometheus + Grafana + cAdvisor)
-- **Prometheus** : collecte des métriques de l'API toutes les 15 secondes
-  - Métriques custom : nombre de prédictions, durée des prédictions, confiance, erreurs
-  - Scrape endpoint : `http://fish_api:8000/metrics`
-- **Grafana** : visualisation des métriques avec dashboard pré-configuré
-  - Dashboard "Fish Classifier API Metrics" avec 6 panneaux
-  - Graphiques : taux de prédictions, durée (percentiles), confiance par classe
-  - Datasource Prometheus configurée automatiquement
-- **cAdvisor** : métriques des conteneurs Docker (CPU, RAM, réseau)
-  - Monitoring de tous les conteneurs en temps réel
-
-## 🔒 Anti-cheating measures
-
-Le code implémente plusieurs mesures pour éviter le data leakage :
-
-1. **Split train/test dans la base de données** : champ `split` dans `fish_data`
-2. **Training sur train uniquement** : `SELECT ... WHERE split = 'train'`
-3. **Validation split** : 80% train, 20% validation sur les données d'entraînement
-4. **Test sur test uniquement** : `SELECT ... WHERE split = 'test'` dans predict.py
-5. **Meilleur modèle basé sur validation accuracy** : évite l'overfitting
-
-## ⚙️ Dépendances automatiques (healthcheck)
-
-Le `docker-compose.yml` gère automatiquement les dépendances :
-
-```yaml
-training:
-  depends_on:
-    minio:
-      condition: service_healthy      # MinIO doit être prêt
-    mysql:
-      condition: service_healthy      # MySQL doit être prêt
-    extraction:
-      condition: service_completed_successfully  # extraction doit avoir réussi
+```
+MinIO (dataset-fish)
+    ↓
+extraction_creation_sql.py  →  MySQL (table fish_data, champ split train/test)
+    ↓
+train_model.py  →  ResNet18 fine-tuning (20 epochs, Adam, LR=0.001)
+                →  MLflow tracking (params + métriques par epoch)
+                →  Upload modèle versionné dans MinIO (model_v1_{timestamp}.pt)
+    ↓
+API FastAPI  →  /predict (POST image → {prediction, confidence})
+            →  /drift   (GET → rapport Evidently JSON)
+            →  /drift/report (GET → rapport HTML complet)
+            →  /metrics (GET → métriques Prometheus)
 ```
 
-## 🔧 Configuration
+### Paramètres d'entraînement
 
-### Paramètres d'entraînement (train_model.py)
+| Paramètre | Valeur |
+|---|---|
+| Architecture | ResNet18 (IMAGENET1K_V1) |
+| Epochs | 20 |
+| Batch size | 16 |
+| Learning rate | 0.001 |
+| Split train/val | 80/20 |
+| Meilleure val accuracy | 84.21% |
 
-```python
-EPOCHS = 20              # Nombre d'époques
-BATCH_SIZE = 16         # Taille des batchs
-LEARNING_RATE = 0.001   # Taux d'apprentissage
-IMG_SIZE = 224          # Taille des images (ResNet18)
-```
+---
 
-### Connexions
+## Réentraînement automatisé
 
-**MinIO :**
-- Endpoint: `minio:9000`
-- Access Key: `admin-user`
-- Secret Key: `admin-password`
-- Buckets: `dataset-fish`, `models`
+Le workflow `.github/workflows/retrain.yml` se déclenche :
+- **Manuellement** via GitHub Actions → workflow_dispatch
+- **Automatiquement** chaque lundi à 2h (cron)
 
-**MySQL :**
-- Host: `mysql`
-- User: `root`
-- Password: `root`
-- Database: `mlops`
-- Table: `fish_data`
-
-## 📈 Performances du modèle
-
-### Training metrics (exemple)
-```
-Epoch 20/20:
-  Train Loss: 0.2847
-  Val Loss: 0.5234
-  Val Accuracy: 84.21% ⭐ (meilleur modèle)
-```
-
-### Test results
-- Précision variable selon les échantillons : 70-100%
-- Confusions principales : 
-  - Mudfish ⟷ Catfish
-  - Snakehead ⟷ Catfish
-- Bonne confiance sur prédictions correctes (>90%)
-
-## 🐛 Troubleshooting
-
-### Erreur "cryptography package is required"
-✅ Résolu : `cryptography` ajouté dans `requirements.txt`
-
-### Message "model_v1.pt téléchargé" au lieu du bon nom
-❌ **Problème :** Docker utilise une ancienne image en cache
-✅ **Solution :** Toujours utiliser `--build` :
-```bash
-docker-compose up --build predict
-```
-
-### Données dupliquées dans MySQL
-✅ Résolu : `DELETE FROM fish_data` avant insertion dans extraction
-
-### Le modèle "triche" sur les données de test
-✅ Résolu : 
-- Ajout du champ `split` dans la table
-- Training sur `split = 'train'` uniquement
-- Predict sur `split = 'test'` uniquement
-
-## 🧹 Nettoyage
+Le script `retrain/retrain.py` vérifie d'abord si un drift est détecté (confiance moyenne < 70% sur les 7 derniers jours) avant de relancer le pipeline. Il peut être forcé avec `--force`.
 
 ```bash
-# Arrêter tous les conteneurs
-docker-compose down
-
-# Supprimer aussi les volumes (⚠️ efface les données)
-docker-compose down -v
-
-# Nettoyer les images Docker
-docker system prune -a
+# Lancer manuellement le réentraînement
+python retrain/retrain.py --force
 ```
 
-## 📝 Notes techniques
+---
 
-- **Transfer Learning :** Utilisation des poids pré-entraînés IMAGENET1K_V1
-- **Optimiseur :** Adam avec LR=0.001
-- **Loss :** CrossEntropyLoss
-- **Data Augmentation :** RandomHorizontalFlip, Normalize
-- **Model Versioning :** Timestamp automatique dans le nom du modèle
-- **Checkpoint :** Sauvegarde du meilleur modèle basé sur validation accuracy
+## Monitoring
 
-## 🎯 Fonctionnalités
+**Prometheus** scrape l'API toutes les 15 secondes sur `/metrics`.
 
-- [x] Pipeline MLOps complet (extraction, training, predict)
-- [x] Versioning du modèle avec Git LFS
-- [x] API REST FastAPI pour prédictions en temps réel
-- [x] Frontend React avec interface interactive
-- [x] Animations et thème aquatique
-- [x] CORS et proxy configurés
-- [x] Intégration MLflow pour tracking des expériences
-- [x] Monitoring avec Prometheus + Grafana + cAdvisor
-- [x] Métriques custom de l'API (prédictions, durée, confiance)
-- [x] Dashboard Grafana pré-configuré
-- [x] Easter egg Kraken interactif
+Métriques exposées :
+- `fish_predictions_total` — compteur par classe prédite
+- `fish_prediction_duration_seconds` — histogramme des temps de réponse
+- `fish_prediction_confidence` — dernière confiance par classe
+- `fish_prediction_errors_total` — compteur d'erreurs
 
-## 🛠️ Technologies utilisées
+**Grafana** (http://localhost:3002) charge automatiquement le dashboard "Fish Classifier API Metrics" avec 5 panneaux :
+1. Taux de prédictions par classe (req/s)
+2. Durée de prédiction p95
+3. Confiance par classe (dernière valeur)
+4. Erreurs totales
+5. Répartition des espèces prédites (camembert)
 
-**Backend & MLOps:**
-- Python 3.10
-- PyTorch 2.9.0 (ResNet18)
-- FastAPI (API REST)
-- MinIO (stockage S3-compatible)
-- MySQL 8.0 (métadonnées)
-- MLflow (experiment tracking)
-- Docker & Docker Compose
-- Git LFS (versioning modèle)
+**Evidently** — détection de drift sur les prédictions récentes vs la distribution de référence du training :
+- `GET /drift` → résumé JSON (drift détecté ou non)
+- `GET /drift/report` → rapport HTML interactif complet
 
-**Monitoring:**
-- Prometheus (collecte de métriques)
-- Grafana (visualisation)
-- cAdvisor (métriques conteneurs)
-- prometheus-client (Python SDK)
+---
 
-**Frontend:**
-- React 18.2.0
-- Vite 5.0.8
-- Axios (HTTP client)
-- Tailwind CSS (styling)
+## CI/CD
+
+Le workflow `.github/workflows/ci-cd.yml` se déclenche sur chaque push sur `main` :
+
+1. Tests Python (pytest) sur l'API
+2. Build et vérification du frontend (npm build)
+3. Build et push des images Docker vers GitHub Container Registry (GHCR)
+
+Images publiées :
+- `ghcr.io/<owner>/fishy-api:latest`
+- `ghcr.io/<owner>/fishy-frontend:latest`
+
+---
+
+## Pipeline complet (réentraînement depuis zéro)
+
+```bash
+# 1. Infrastructure
+docker compose up -d minio mysql mlflow
+
+# 2. Extraction + entraînement (attend que les services soient healthy)
+docker compose up --build extraction training
+
+# 3. Serving + monitoring
+docker compose up -d fish_api frontend prometheus grafana cadvisor
+```
+
+## Anti-data leakage
+
+- Champ `split` (train/test) dans la table MySQL `fish_data`
+- Entraînement sur `WHERE split = 'train'` uniquement
+- Validation 80/20 sur les données d'entraînement
+- Test sur `WHERE split = 'test'` uniquement
+- Meilleur modèle sélectionné sur la validation accuracy
+
+## Nettoyage
+
+```bash
+# Arrêter tout
+docker compose down
+
+# Arrêter et supprimer les volumes (repart de zéro)
+docker compose down -v
+```
