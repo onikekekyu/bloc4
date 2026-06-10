@@ -91,7 +91,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "increase(fish_prediction_errors_total[1h])",
+          "expr": "fish_prediction_errors_total",
           "legendFormat": "Erreurs / heure",
           "refId": "A"
         }
@@ -111,12 +111,12 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "increase(fish_predictions_total[15m])",
+          "expr": "sum by (predicted_class) (fish_predictions_total)",
           "legendFormat": "{{predicted_class}}",
           "refId": "A"
         }
       ],
-      "title": "Volume de prédictions par classe (1h)",
+      "title": "Volume de prédictions par classe (total)",
       "type": "barchart"
     }
   ],
