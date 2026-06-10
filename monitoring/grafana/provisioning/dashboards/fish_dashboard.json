@@ -111,12 +111,12 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "sum by (predicted_class) (fish_predictions_total)",
+          "expr": "rate(fish_predictions_total[2m]) > 0",
           "legendFormat": "{{predicted_class}}",
           "refId": "A"
         }
       ],
-      "title": "Volume de prédictions par classe (total)",
+      "title": "Prédictions récentes — 2 min glissantes",
       "type": "barchart"
     }
   ],
