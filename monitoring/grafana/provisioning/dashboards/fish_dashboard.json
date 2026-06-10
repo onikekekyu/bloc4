@@ -111,13 +111,14 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "prometheus" },
-          "expr": "rate(fish_predictions_total[2m]) > 0",
+          "expr": "sum by (predicted_class) (fish_predictions_total)",
           "legendFormat": "{{predicted_class}}",
           "refId": "A"
         }
       ],
-      "title": "Prédictions récentes — 2 min glissantes",
-      "type": "barchart"
+      "title": "Répartition des espèces prédites (total)",
+      "type": "piechart",
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "displayLabels": ["name", "percent"], "legend": { "displayMode": "table", "placement": "right", "values": ["value", "percent"] } }
     }
   ],
   "refresh": "30s",
